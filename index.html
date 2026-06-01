@@ -309,6 +309,9 @@
             <input id="height" type="number" min="1" value="1670">
           </label>
         </div>
+        <label>底脚/脚轮高度，计入外高时填写
+          <input id="baseLift" type="number" min="0" value="0">
+        </label>
         <div class="grid-2">
           <label>型材规格
             <select id="profile">
@@ -560,7 +563,9 @@
       const name = $("frameName").value.trim() || "frame";
       const w = num("width");
       const d = num("depth");
-      const h = num("height");
+      const totalH = num("height");
+      const baseLift = Math.max(0, num("baseLift"));
+      const h = totalH - baseLift;
       const p = num("profile");
       const through = $("through").value;
       const levels = parseList("levels", h);
@@ -573,19 +578,22 @@
       const lenZ = through === "Z" ? h : h - 2 * p;
       const startX = through === "X" ? 0 : p;
       const startY = through === "Y" ? 0 : p;
-      const startZ = through === "Z" ? 0 : p;
+      const startZ = (through === "Z" ? 0 : p) + baseLift;
 
+      if (h <= p) {
+        throw new Error("底脚/脚轮高度过大，扣除后框架高度不足。");
+      }
       if (Math.min(lenX, lenY, lenZ) <= 0) {
         throw new Error("尺寸太小，扣料后出现负长度。");
       }
 
       for (const y of [0, d - p]) {
-        for (const z of [0, h - p]) {
+        for (const z of [baseLift, baseLift + h - p]) {
           addUniqueBeam(beams, beam("宽向横梁", "X", startX, y, z, lenX, p, "外框"));
         }
       }
       for (const x of [0, w - p]) {
-        for (const z of [0, h - p]) {
+        for (const z of [baseLift, baseLift + h - p]) {
           addUniqueBeam(beams, beam("深向横梁", "Y", x, startY, z, lenY, p, "外框"));
         }
       }
@@ -596,7 +604,7 @@
       }
 
       for (const zRaw of levels) {
-        const z = Math.max(0, Math.min(h - p, zRaw));
+        const z = Math.max(baseLift, Math.min(baseLift + h - p, zRaw));
         for (const y of [0, d - p]) {
           addUniqueBeam(beams, beam("主框横撑宽向梁", "X", startX, y, z, lenX, p, `横撑高度 ${zRaw}`));
         }
@@ -635,7 +643,7 @@
         g.notes.add(`${b.name}/${b.note}`);
       }
 
-      const nodeStats = structuralNodeStats(w, d, h, p, levels, xDivs, yDivs);
+      const nodeStats = structuralNodeStats(w, d, h, p, levels.map((z) => z - baseLift), xDivs, yDivs);
       const cornerConnectors = num("cornerConnectors");
       const edgeConnectors = num("edgeConnectors");
       const levelConnectors = num("levelConnectors");
@@ -650,7 +658,7 @@
       const connector = connectorInfo($("connectorType").value, p);
 
       state = {
-        name, width: w, depth: d, height: h, profile: p, through,
+        name, width: w, depth: d, height: totalH, frameHeight: h, baseLift, profile: p, through,
         levels, xDivs, yDivs, beams, modules,
         panels: moduleResult.panels,
         accessories: moduleResult.accessories,
@@ -1080,7 +1088,9 @@
       const p = num("profile");
       const w = num("width");
       const d = num("depth");
-      const h = num("height");
+      const totalH = num("height");
+      const baseLift = Math.max(0, num("baseLift"));
+      const h = Math.max(1, totalH - baseLift);
       const defaults = {
         top_extension: [600, 0],
         side_extension: [600, 0],
@@ -1198,13 +1208,15 @@
       const p = num("profile");
       const w = num("width");
       const d = num("depth");
-      const h = num("height");
+      const totalH = num("height");
+      const baseLift = Math.max(0, num("baseLift"));
+      const h = Math.max(1, totalH - baseLift);
       const primary = Math.max(0, num("modulePrimary"));
       const secondary = Math.max(0, num("moduleSecondary"));
       let x = 0, y = 0, z = 0, mw = 0, md = 0, mh = 0;
 
       if (["top_extension", "cantilever"].includes(type)) {
-        z = h - p;
+        z = totalH - p;
         mh = 0;
         if (anchor === "top_right") {
           x = w; y = 0; mw = primary || 600; md = secondary || d;
@@ -1216,7 +1228,7 @@
           x = 0; y = d; md = primary || 250; mw = secondary || w;
         }
       } else if (type === "side_extension") {
-        z = 0; mh = h; md = secondary || d; mw = primary || 600;
+        z = baseLift; mh = h; md = secondary || d; mw = primary || 600;
         if (["top_left", "front"].includes(anchor)) x = -mw;
         else x = w;
         y = anchor === "back" ? d : 0;
@@ -1230,19 +1242,19 @@
       } else if (["shelf_frame", "drawer_frame", "divider_frame", "equipment_tray"].includes(type)) {
         x = anchor === "inside" ? p : 0;
         y = anchor === "inside" ? p : 0;
-        z = p;
+        z = baseLift + p;
         mw = primary || Math.max(p, w - 2 * p);
         md = secondary || Math.max(p, d - 2 * p);
         mh = type === "drawer_frame" ? p : 0;
       } else if (type === "door_frame") {
         x = 0;
         y = anchor === "back" ? d - p : 0;
-        z = 0;
+        z = baseLift;
         mw = primary || w;
         md = p;
         mh = secondary || h;
       } else if (type === "extra_crossbar") {
-        z = secondary || Math.round(h / 2);
+        z = baseLift + (secondary || Math.round(h / 2));
         mh = 0;
         if (anchor === "front") {
           x = p; y = 0; mw = primary || Math.max(1, w - 2 * p); md = p;
@@ -1254,7 +1266,7 @@
           x = w - p; y = p; mw = p; md = primary || Math.max(1, d - 2 * p);
         }
       } else if (moduleCreatesPanel({ family: $("moduleFamily").value, type })) {
-        const panel = panelGeometry(type, anchor, primary, secondary, w, d, h);
+        const panel = panelGeometry(type, anchor, primary, secondary, w, d, totalH, baseLift);
         x = panel.x; y = panel.y; z = panel.z; mw = panel.w; md = panel.d; mh = panel.h;
       } else {
         x = 0; y = 0; z = 0;
@@ -1264,17 +1276,18 @@
       setModuleGeometry(x, y, z, mw, md, mh);
     }
 
-    function panelGeometry(type, anchor, primary, secondary, w, d, h) {
+    function panelGeometry(type, anchor, primary, secondary, w, d, totalH, baseLift) {
+      const frameH = Math.max(1, totalH - baseLift);
       if (type === "side_panel") {
-        return { x: anchor === "top_left" ? 0 : w, y: 0, z: 0, w: primary || d, d: 18, h: secondary || h };
+        return { x: anchor === "top_left" ? 0 : w, y: 0, z: baseLift, w: primary || d, d: 18, h: secondary || frameH };
       }
       if (type === "back_panel") {
-        return { x: 0, y: anchor === "front" ? 0 : d, z: 0, w: primary || w, d: 18, h: secondary || h };
+        return { x: 0, y: anchor === "front" ? 0 : d, z: baseLift, w: primary || w, d: 18, h: secondary || frameH };
       }
       if (type === "pegboard") {
-        return { x: 0, y: anchor === "front" ? 0 : d, z: 0, w: primary || w, d: 18, h: secondary || h };
+        return { x: 0, y: anchor === "front" ? 0 : d, z: baseLift, w: primary || w, d: 18, h: secondary || frameH };
       }
-      return { x: 0, y: 0, z: h, w: primary || w, d: secondary || d, h: 18 };
+      return { x: 0, y: 0, z: totalH, w: primary || w, d: secondary || d, h: 18 };
     }
 
     function moduleLabel(family, type) {
@@ -1519,6 +1532,7 @@
       $("width").value = data.width || 800;
       $("depth").value = data.depth || 250;
       $("height").value = data.height || 1670;
+      $("baseLift").value = data.baseLift || 0;
       $("profile").value = data.profile || 20;
       $("through").value = data.through || "Z";
       $("levels").value = (data.levels || []).join(",");
@@ -1618,7 +1632,7 @@
       $("yDivs").value = "";
       compute();
     });
-    for (const id of ["frameName", "width", "depth", "height", "profile", "through", "levels", "xDivs", "yDivs", "connectorType", "cornerConnectors", "edgeConnectors", "levelConnectors", "extraConnectors", "fastenersPerBracket", "orderNote"]) {
+    for (const id of ["frameName", "width", "depth", "height", "baseLift", "profile", "through", "levels", "xDivs", "yDivs", "connectorType", "cornerConnectors", "edgeConnectors", "levelConnectors", "extraConnectors", "fastenersPerBracket", "orderNote"]) {
       $(id).addEventListener("change", () => {
         try { compute(); } catch (err) { /* wait for valid input */ }
       });
