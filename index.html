@@ -1,0 +1,1630 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>铝型材框架下料助手</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      --ink: #1d252c;
+      --muted: #66717d;
+      --line: #d8dde3;
+      --panel: #f7f8fa;
+      --accent: #146c94;
+      --accent-2: #2b8a3e;
+      --warn: #a35d00;
+      --bg: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    header {
+      padding: 18px 24px 12px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+    h1 {
+      font-size: 22px;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    main {
+      display: grid;
+      grid-template-columns: minmax(320px, 440px) 1fr;
+      min-height: calc(100vh - 67px);
+    }
+    aside {
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      padding: 18px;
+      overflow: auto;
+    }
+    section {
+      padding: 18px;
+      min-width: 0;
+    }
+    fieldset {
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 14px;
+      margin: 0 0 14px;
+      border-radius: 6px;
+    }
+    legend {
+      padding: 0 6px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    input, select, textarea, button {
+      font: inherit;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #c9d0d8;
+      border-radius: 5px;
+      background: #fff;
+      color: var(--ink);
+      padding: 8px 9px;
+      min-height: 38px;
+    }
+    textarea {
+      min-height: 78px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 14px;
+    }
+    button {
+      border: 1px solid #b8c3cd;
+      border-radius: 5px;
+      background: #fff;
+      padding: 8px 11px;
+      color: var(--ink);
+      cursor: pointer;
+      min-height: 38px;
+    }
+    button.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    button.good {
+      background: var(--accent-2);
+      color: #fff;
+      border-color: var(--accent-2);
+    }
+    button:active {
+      transform: translateY(1px);
+    }
+    .preview-wrap {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+      background: #eef1f4;
+      min-height: 360px;
+    }
+    canvas {
+      width: 100%;
+      height: 460px;
+      display: block;
+      background: linear-gradient(#f9fafb, #e7ebef);
+    }
+    .tables {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 1px solid var(--line);
+      font-size: 13px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f0f3f6;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    td.num, th.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .note {
+      border-left: 3px solid var(--warn);
+      background: #fff8ee;
+      padding: 10px 12px;
+      margin-top: 12px;
+      color: #5f3a00;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .step-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .step-tab {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      border-radius: 5px;
+      padding: 9px;
+      font-size: 13px;
+    }
+    .step-tab.active {
+      color: #fff;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .step-tab.locked {
+      opacity: 0.55;
+    }
+    .panel-hidden {
+      display: none;
+    }
+    details.advanced {
+      border: 1px dashed var(--line);
+      border-radius: 6px;
+      background: #fff;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+    details.advanced summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .module-list {
+      display: grid;
+      gap: 8px;
+      margin: 0 0 14px;
+    }
+    .module-item {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .module-item-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .module-title {
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--ink);
+    }
+    .module-meta {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    button.icon {
+      min-height: 30px;
+      padding: 4px 8px;
+    }
+    .pill {
+      display: inline-block;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 2px 8px;
+      margin: 0 4px 4px 0;
+      background: #fff;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    @media (max-width: 960px) {
+      main { grid-template-columns: 1fr; }
+      aside { border-right: 0; border-bottom: 1px solid var(--line); }
+      .tables { grid-template-columns: 1fr; }
+      canvas { height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>铝型材框架下料助手</h1>
+    <div class="hint">外尺寸输入，自动扣料，导出 BOM 和简化 3D 模型。单位：mm。</div>
+  </header>
+
+  <main>
+    <aside>
+      <div class="step-tabs">
+        <button class="step-tab active" id="stepFrame" type="button">1 外框</button>
+        <button class="step-tab locked" id="stepModules" type="button">2 添加模块</button>
+      </div>
+
+      <div id="framePanel">
+      <fieldset>
+        <legend>框架</legend>
+        <label>框架名称
+          <input id="frameName" value="右侧高架">
+        </label>
+        <div class="grid-3">
+          <label>外宽 X
+            <input id="width" type="number" min="1" value="800">
+          </label>
+          <label>外深 Y
+            <input id="depth" type="number" min="1" value="250">
+          </label>
+          <label>外高 Z
+            <input id="height" type="number" min="1" value="1670">
+          </label>
+        </div>
+        <div class="grid-2">
+          <label>型材规格
+            <select id="profile">
+              <option value="20">2020</option>
+              <option value="30">3030</option>
+              <option value="40">4040</option>
+              <option value="45">4545</option>
+            </select>
+          </label>
+          <label>主体贯通方向
+            <select id="through">
+              <option value="Z">立柱贯通，高度不扣料</option>
+              <option value="X">横梁贯通，宽度不扣料</option>
+              <option value="Y">深梁贯通，深度不扣料</option>
+            </select>
+          </label>
+        </div>
+        <label>主框横撑高度 Z，用逗号分隔
+          <input id="levels" value="730,1200">
+        </label>
+        <label>宽向分隔 X，用逗号分隔
+          <input id="xDivs" value="">
+        </label>
+        <label>深向分隔 Y，用逗号分隔
+          <input id="yDivs" value="">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>连接件估算</legend>
+        <label>连接方案
+          <select id="connectorType">
+            <option value="external_bracket">外置角码 + 滑块/弹性螺母</option>
+            <option value="inner_bracket">内置角件/隐藏角码</option>
+            <option value="end_tap">端面攻丝 + 螺栓</option>
+            <option value="plate">连接板</option>
+            <option value="custom">自定义/暂不估算</option>
+          </select>
+        </label>
+        <div class="grid-3">
+          <label>三轴角节点/个
+            <input id="cornerConnectors" type="number" min="0" value="3">
+          </label>
+          <label>二轴边节点/个
+            <input id="edgeConnectors" type="number" min="0" value="1">
+          </label>
+          <label>横撑/模块支撑点
+            <input id="levelConnectors" type="number" min="0" value="1">
+          </label>
+        </div>
+        <div class="grid-2">
+          <label>每个连接件紧固件数
+            <input id="fastenersPerBracket" type="number" min="0" value="2">
+          </label>
+          <label>额外连接件
+            <input id="extraConnectors" type="number" min="0" value="0">
+          </label>
+        </div>
+        <label>采购备注
+          <textarea id="orderNote">按所选连接件确认螺丝长度、螺母类型、是否需要攻丝；端盖按外露端面补。</textarea>
+        </label>
+      </fieldset>
+
+      <div class="toolbar">
+        <button class="primary" id="confirmFrame">确认外框，添加其他</button>
+        <button id="recalc">重新计算</button>
+        <button id="sampleBase">载入矮柜示例</button>
+        <button id="sampleTower">载入高架示例</button>
+      </div>
+      </div>
+
+      <div id="modulesPanel" class="panel-hidden">
+        <fieldset>
+          <legend>附加模块</legend>
+          <label>模块族
+            <select id="moduleFamily">
+              <option value="structure">结构扩展</option>
+              <option value="internal">内部框架</option>
+              <option value="motion">抽拉/开合</option>
+              <option value="panel">面板安装</option>
+              <option value="reinforce">加固支撑</option>
+              <option value="base">底脚/固定</option>
+            </select>
+          </label>
+          <label>模块类型
+            <select id="moduleType"></select>
+          </label>
+          <div class="note" id="moduleHelp"></div>
+          <div class="grid-3">
+            <label>挂载位置
+              <select id="moduleAnchor">
+                <option value="top_right">顶面右侧</option>
+                <option value="top_left">顶面左侧</option>
+                <option value="top_front">顶面前侧</option>
+                <option value="top_back">顶面后侧</option>
+                <option value="inside">主框内部</option>
+                <option value="front">前侧</option>
+                <option value="back">后侧</option>
+                <option value="custom">自定义坐标</option>
+              </select>
+            </label>
+            <label>主尺寸
+              <input id="modulePrimary" type="number" value="600">
+              <span class="small" id="modulePrimaryHint"></span>
+            </label>
+            <label>次尺寸
+              <input id="moduleSecondary" type="number" value="0">
+              <span class="small" id="moduleSecondaryHint"></span>
+            </label>
+          </div>
+          <div class="grid-2" id="moduleRepeatFields">
+            <label id="moduleQtyLabel">重复个数/层数
+              <input id="moduleQty" type="number" min="1" value="1">
+            </label>
+            <label>预留间隙
+              <input id="moduleClearance" type="number" min="0" value="0">
+            </label>
+          </div>
+          <div class="small" id="moduleRepeatHelp">重复个数大于 1 时，会沿 Z 方向按“模块高 + 预留间隙”生成多份；普通顶部延伸通常保持 1。</div>
+          <label>模块备注
+            <textarea id="moduleNote">按实际配件确认孔位、滑轨/板材/脚轮规格。</textarea>
+          </label>
+          <details class="advanced">
+            <summary>高级：查看/微调计算后的坐标和外尺寸</summary>
+            <div class="grid-3" style="margin-top:10px;">
+              <label>位置 X
+                <input id="moduleX" type="number" value="0">
+              </label>
+              <label>位置 Y
+                <input id="moduleY" type="number" value="0">
+              </label>
+              <label>位置 Z
+                <input id="moduleZ" type="number" value="0">
+              </label>
+            </div>
+            <div class="grid-3">
+              <label>模块宽
+                <input id="moduleW" type="number" value="0">
+              </label>
+              <label>模块深
+                <input id="moduleD" type="number" value="0">
+              </label>
+              <label>模块高
+                <input id="moduleH" type="number" value="0">
+              </label>
+            </div>
+          </details>
+        </fieldset>
+        <div class="toolbar">
+          <button class="primary" id="backToFrame">返回修改外框</button>
+          <button id="addModule">添加模块</button>
+        </div>
+        <fieldset>
+          <legend>已添加模块</legend>
+          <div id="moduleList" class="module-list"></div>
+          <div class="small" id="moduleEmpty">还没有添加模块。先选择模块族和类型，再填写位置、尺寸和备注。</div>
+        </fieldset>
+      </div>
+
+      <div class="small">
+        <span class="pill">OBJ/STL 是简化方管</span>
+        <span class="pill">BOM 可复制到表格</span>
+        <span class="pill">先确认外框，再加模块</span>
+      </div>
+    </aside>
+
+    <section>
+      <div class="toolbar">
+        <button class="good" id="exportCsv">导出 BOM CSV</button>
+        <button id="exportJson">导出 JSON</button>
+        <button id="importJson">导入 JSON</button>
+        <input id="jsonFile" type="file" accept="application/json,.json" style="display:none">
+        <button id="exportObj">导出 OBJ 模型</button>
+        <button id="exportStl">导出 STL 模型</button>
+      </div>
+
+      <div class="preview-wrap">
+        <canvas id="preview" width="1200" height="620"></canvas>
+      </div>
+
+      <div class="note" id="ruleText"></div>
+
+      <div class="tables">
+        <div>
+          <h2 style="font-size:16px;margin:16px 0 8px;">型材切割清单</h2>
+          <table id="cutTable">
+            <thead>
+              <tr>
+                <th>规格</th>
+                <th class="num">长度</th>
+                <th class="num">数量</th>
+                <th>位置</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div>
+          <h2 style="font-size:16px;margin:16px 0 8px;">五金估算</h2>
+          <table id="hardwareTable">
+            <thead>
+              <tr>
+                <th>项目</th>
+                <th class="num">数量</th>
+                <th>备注</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let state = null;
+    let modules = [];
+    let nextModuleId = 1;
+
+    function num(id) {
+      return Number($(id).value || 0);
+    }
+
+    function parseList(id, max) {
+      return $(id).value
+        .split(/[，,\s]+/)
+        .map((v) => Number(v.trim()))
+        .filter((v) => Number.isFinite(v) && v > 0 && v < max)
+        .sort((a, b) => a - b);
+    }
+
+    function beam(name, axis, x, y, z, length, p, note) {
+      return { name, axis, x, y, z, length: Math.round(length * 1000) / 1000, p, note };
+    }
+
+    function addUniqueBeam(list, item) {
+      const key = [item.axis, item.x, item.y, item.z, item.length].join("|");
+      const existing = list.find((b) => [b.axis, b.x, b.y, b.z, b.length].join("|") === key);
+      if (existing) {
+        const notes = new Set(String(existing.note).split("；").concat(String(item.note).split("；")));
+        existing.note = [...notes].filter(Boolean).join("；");
+      } else {
+        list.push(item);
+      }
+    }
+
+    function compute() {
+      const name = $("frameName").value.trim() || "frame";
+      const w = num("width");
+      const d = num("depth");
+      const h = num("height");
+      const p = num("profile");
+      const through = $("through").value;
+      const levels = parseList("levels", h);
+      const xDivs = parseList("xDivs", w);
+      const yDivs = parseList("yDivs", d);
+      const beams = [];
+
+      const lenX = through === "X" ? w : w - 2 * p;
+      const lenY = through === "Y" ? d : d - 2 * p;
+      const lenZ = through === "Z" ? h : h - 2 * p;
+      const startX = through === "X" ? 0 : p;
+      const startY = through === "Y" ? 0 : p;
+      const startZ = through === "Z" ? 0 : p;
+
+      if (Math.min(lenX, lenY, lenZ) <= 0) {
+        throw new Error("尺寸太小，扣料后出现负长度。");
+      }
+
+      for (const y of [0, d - p]) {
+        for (const z of [0, h - p]) {
+          addUniqueBeam(beams, beam("宽向横梁", "X", startX, y, z, lenX, p, "外框"));
+        }
+      }
+      for (const x of [0, w - p]) {
+        for (const z of [0, h - p]) {
+          addUniqueBeam(beams, beam("深向横梁", "Y", x, startY, z, lenY, p, "外框"));
+        }
+      }
+      for (const x of [0, w - p]) {
+        for (const y of [0, d - p]) {
+          addUniqueBeam(beams, beam("立柱", "Z", x, y, startZ, lenZ, p, "外框"));
+        }
+      }
+
+      for (const zRaw of levels) {
+        const z = Math.max(0, Math.min(h - p, zRaw));
+        for (const y of [0, d - p]) {
+          addUniqueBeam(beams, beam("主框横撑宽向梁", "X", startX, y, z, lenX, p, `横撑高度 ${zRaw}`));
+        }
+        for (const x of [0, w - p]) {
+          addUniqueBeam(beams, beam("主框横撑深向梁", "Y", x, startY, z, lenY, p, `横撑高度 ${zRaw}`));
+        }
+      }
+
+      for (const xRaw of xDivs) {
+        const x = Math.max(0, Math.min(w - p, xRaw));
+        for (const y of [0, d - p]) {
+          addUniqueBeam(beams, beam("宽向分隔立柱", "Z", x, y, startZ, lenZ, p, `X=${xRaw}`));
+        }
+      }
+
+      for (const yRaw of yDivs) {
+        const y = Math.max(0, Math.min(d - p, yRaw));
+        for (const x of [0, w - p]) {
+          addUniqueBeam(beams, beam("深向分隔立柱", "Z", x, y, startZ, lenZ, p, `Y=${yRaw}`));
+        }
+      }
+
+      const moduleResult = buildModules(p);
+      for (const b of moduleResult.beams) {
+        addUniqueBeam(beams, b);
+      }
+
+      const groups = new Map();
+      for (const b of beams) {
+        const key = `${p}${p}|${b.length}`;
+        if (!groups.has(key)) {
+          groups.set(key, { spec: `${p}${p}`, length: b.length, qty: 0, notes: new Set() });
+        }
+        const g = groups.get(key);
+        g.qty += 1;
+        g.notes.add(`${b.name}/${b.note}`);
+      }
+
+      const nodeStats = structuralNodeStats(w, d, h, p, levels, xDivs, yDivs);
+      const cornerConnectors = num("cornerConnectors");
+      const edgeConnectors = num("edgeConnectors");
+      const levelConnectors = num("levelConnectors");
+      const extraConnectors = num("extraConnectors");
+      const fastenersPerBracket = num("fastenersPerBracket");
+      const bracketQty =
+        nodeStats.cornerNodes * cornerConnectors +
+        nodeStats.edgeNodes * edgeConnectors +
+        nodeStats.levelSupportPoints * levelConnectors +
+        extraConnectors;
+      const fastenerQty = bracketQty * fastenersPerBracket;
+      const connector = connectorInfo($("connectorType").value, p);
+
+      state = {
+        name, width: w, depth: d, height: h, profile: p, through,
+        levels, xDivs, yDivs, beams, modules,
+        panels: moduleResult.panels,
+        accessories: moduleResult.accessories,
+        groups: [...groups.values()].sort((a, b) => a.length - b.length),
+        nodeStats,
+        hardware: buildHardware(connector, nodeStats, {
+          cornerConnectors,
+          edgeConnectors,
+          levelConnectors,
+          extraConnectors,
+          connectorQty: bracketQty,
+          fastenerQty,
+          fastenersPerBracket
+        }),
+      };
+      render();
+    }
+
+    function buildModules(p) {
+      const result = { beams: [], panels: [], accessories: [] };
+      for (const mod of modules) {
+        const qty = Math.max(1, mod.qty || 1);
+        const stepZ = Math.max(0, mod.height || 0) + Math.max(0, mod.clearance || 0);
+        for (let i = 0; i < qty; i++) {
+          const copy = { ...mod, z: mod.z + i * stepZ, instance: i + 1 };
+          if (moduleCreatesFrame(copy)) {
+            for (const b of moduleFrameBeams(copy, p)) {
+              addUniqueBeam(result.beams, b);
+            }
+          } else if (moduleCreatesPanel(copy)) {
+            result.panels.push(modulePanel(copy));
+          } else {
+            result.accessories.push(moduleAccessory(copy));
+          }
+        }
+      }
+      return result;
+    }
+
+    function moduleCreatesFrame(mod) {
+      return ["structure", "internal"].includes(mod.family) ||
+        ["door_frame", "extra_crossbar"].includes(mod.type);
+    }
+
+    function moduleCreatesPanel(mod) {
+      return mod.family === "panel";
+    }
+
+    function moduleFrameBeams(mod, p) {
+      if (mod.type === "top_extension" || mod.type === "cantilever") {
+        return topExtensionBeams(mod, p);
+      }
+      if (mod.type === "support_post") {
+        return supportPostBeams(mod, p);
+      }
+      if (mod.type === "extra_crossbar") {
+        return extraCrossbarBeams(mod, p);
+      }
+      const w = mod.width;
+      const d = mod.depth;
+      const h = mod.height;
+      const x = mod.x;
+      const y = mod.y;
+      const z = mod.z;
+      const label = `${mod.familyLabel}/${mod.typeLabel}#${mod.id}.${mod.instance}`;
+      const beams = [];
+      if (w <= 0 || d <= 0) {
+        return beams;
+      }
+
+      const usableW = Math.max(1, w - 2 * p);
+      const usableD = Math.max(1, d - 2 * p);
+      const isFlat = h <= p;
+
+      for (const yy of [y, y + d - p]) {
+        addUniqueBeam(beams, beam("模块宽向梁", "X", x + p, yy, z, usableW, p, label));
+      }
+      for (const xx of [x, x + w - p]) {
+        addUniqueBeam(beams, beam("模块深向梁", "Y", xx, y + p, z, usableD, p, label));
+      }
+
+      if (!isFlat) {
+        const usableH = Math.max(1, h);
+        for (const xx of [x, x + w - p]) {
+          for (const yy of [y, y + d - p]) {
+            addUniqueBeam(beams, beam("模块立柱", "Z", xx, yy, z, usableH, p, label));
+          }
+        }
+        for (const yy of [y, y + d - p]) {
+          addUniqueBeam(beams, beam("模块顶宽向梁", "X", x + p, yy, z + h - p, usableW, p, label));
+        }
+        for (const xx of [x, x + w - p]) {
+          addUniqueBeam(beams, beam("模块顶深向梁", "Y", xx, y + p, z + h - p, usableD, p, label));
+        }
+      }
+      return beams;
+    }
+
+    function supportPostBeams(mod, p) {
+      const label = `${mod.familyLabel}/${mod.typeLabel}#${mod.id}.${mod.instance}`;
+      return [beam("附加支撑立柱", "Z", mod.x, mod.y, mod.z, Math.max(1, mod.height), p, label)];
+    }
+
+    function extraCrossbarBeams(mod, p) {
+      const label = `${mod.familyLabel}/${mod.typeLabel}#${mod.id}.${mod.instance}`;
+      const axis = mod.anchor === "front" || mod.anchor === "back" ? "X" : "Y";
+      const length = axis === "X" ? Math.max(1, mod.width) : Math.max(1, mod.depth);
+      return [beam("加密横梁", axis, mod.x, mod.y, mod.z, length, p, label)];
+    }
+
+    function topExtensionBeams(mod, p) {
+      const w = mod.width;
+      const d = mod.depth;
+      const x = mod.x;
+      const y = mod.y;
+      const z = mod.z;
+      const anchor = mod.anchor || "top_right";
+      const label = `${mod.familyLabel}/${mod.typeLabel}#${mod.id}.${mod.instance}`;
+      const beams = [];
+      if (w <= 0 || d <= 0) {
+        return beams;
+      }
+
+      if (anchor === "top_right" || anchor === "top_left") {
+        const outerX = anchor === "top_right" ? x + w - p : x;
+        const startX = anchor === "top_right" ? x : x + p;
+        const longLen = Math.max(1, w - p);
+        const endLen = Math.max(1, d - 2 * p);
+        for (const yy of [y, y + d - p]) {
+          addUniqueBeam(beams, beam("延伸顶面加长梁", "X", startX, yy, z, longLen, p, label));
+        }
+        addUniqueBeam(beams, beam("延伸顶面端部梁", "Y", outerX, y + p, z, endLen, p, label));
+      } else {
+        const outerY = anchor === "top_back" ? y + d - p : y;
+        const startY = anchor === "top_back" ? y : y + p;
+        const longLen = Math.max(1, d - p);
+        const endLen = Math.max(1, w - 2 * p);
+        for (const xx of [x, x + w - p]) {
+          addUniqueBeam(beams, beam("延伸顶面加深梁", "Y", xx, startY, z, longLen, p, label));
+        }
+        addUniqueBeam(beams, beam("延伸顶面端部梁", "X", x + p, outerY, z, endLen, p, label));
+      }
+      return beams;
+    }
+
+    function modulePanel(mod) {
+      return {
+        item: mod.typeLabel,
+        qty: 1,
+        width: mod.width,
+        depth: mod.depth,
+        height: mod.height,
+        note: `${mod.familyLabel}/${mod.typeLabel}#${mod.id}.${mod.instance}；位置 ${mod.x},${mod.y},${mod.z}；${mod.note}`
+      };
+    }
+
+    function moduleAccessory(mod) {
+      const qty = accessoryQty(mod);
+      return {
+        item: mod.typeLabel,
+        qty,
+        note: `${mod.familyLabel}/${mod.typeLabel}#${mod.id}.${mod.instance}；位置 ${mod.x},${mod.y},${mod.z}；尺寸 ${mod.width}x${mod.depth}x${mod.height}；${mod.note}`
+      };
+    }
+
+    function accessoryQty(mod) {
+      if (["leveling_foot", "caster"].includes(mod.type)) return 4;
+      if (["floor_anchor", "wall_anchor"].includes(mod.type)) return 2;
+      if (["drawer_slide"].includes(mod.type)) return 2;
+      if (["door_frame"].includes(mod.type)) return 2;
+      if (["gusset_plate", "anti_rack"].includes(mod.type)) return 4;
+      return 1;
+    }
+
+    function structuralNodeStats(w, d, h, p, levels, xDivs, yDivs) {
+      const nodes = new Set();
+      const add = (x, y, z) => nodes.add([x, y, z].map((v) => Math.round(v)).join(","));
+      const xEnds = [0, w - p];
+      const yEnds = [0, d - p];
+      const topZ = h - p;
+      const validLevels = uniqueNumbers(levels.map((z) => Math.max(0, Math.min(topZ, z))))
+        .filter((z) => z !== 0 && z !== topZ);
+      const zPlanes = uniqueNumbers([0, topZ, ...validLevels]);
+
+      for (const z of zPlanes) {
+        for (const x of xEnds) {
+          for (const y of yEnds) add(x, y, z);
+        }
+      }
+
+      for (const x of xDivs.map((v) => Math.max(0, Math.min(w - p, v)))) {
+        for (const y of yEnds) {
+          for (const z of zPlanes) add(x, y, z);
+        }
+      }
+
+      for (const y of yDivs.map((v) => Math.max(0, Math.min(d - p, v)))) {
+        for (const x of xEnds) {
+          for (const z of zPlanes) add(x, y, z);
+        }
+      }
+
+      return {
+        totalNodes: nodes.size,
+        cornerNodes: 8,
+        edgeNodes: xDivs.length * 2 * zPlanes.length + yDivs.length * 2 * zPlanes.length,
+        levelSupportPoints: validLevels.length * 4,
+        levelPlanes: validLevels.length,
+      };
+    }
+
+    function uniqueNumbers(values) {
+      return [...new Set(values.map((v) => Math.round(v * 1000) / 1000))].sort((a, b) => a - b);
+    }
+
+    function connectorInfo(type, p) {
+      const size = `${p}${p}`;
+      return {
+        external_bracket: {
+          connectorName: `${size} 外置角码`,
+          nutName: "滑块螺母/弹性螺母",
+          boltName: "内六角螺丝",
+          note: "不是固定为 T 型螺母；按你买的角码孔径和型材槽宽选滑块、弹性螺母或后置螺母。"
+        },
+        inner_bracket: {
+          connectorName: `${size} 内置角件/隐藏角码`,
+          nutName: "",
+          boltName: "配套顶丝/螺丝",
+          note: "通常购买成套隐藏连接件，螺丝和顶丝以卖家套装为准。"
+        },
+        end_tap: {
+          connectorName: "端面攻丝连接位",
+          nutName: "",
+          boltName: "端面连接螺栓",
+          note: "需要确认型材中心孔可攻丝，并在下单时备注攻丝规格和位置。"
+        },
+        plate: {
+          connectorName: `${size} 连接板`,
+          nutName: "滑块螺母/弹性螺母",
+          boltName: "内六角螺丝",
+          note: "连接板孔距差异很大，数量只是按节点估算。"
+        },
+        custom: {
+          connectorName: "自定义连接件",
+          nutName: "",
+          boltName: "",
+          note: "暂不推断螺母和螺丝，请按实际方案手动补充。"
+        }
+      }[type];
+    }
+
+    function buildHardware(connector, nodeStats, counts) {
+      const note = $("orderNote").value.trim();
+      const detail = [
+        `三轴角节点 ${nodeStats.cornerNodes} × ${counts.cornerConnectors}`,
+        `二轴边节点 ${nodeStats.edgeNodes} × ${counts.edgeConnectors}`,
+        `横撑/模块支撑 ${nodeStats.levelSupportPoints} × ${counts.levelConnectors}`,
+        `额外 ${counts.extraConnectors}`
+      ].join("；");
+      const rows = [
+        { item: connector.connectorName, qty: counts.connectorQty, note: `${detail}；${connector.note}` },
+      ];
+      if (connector.nutName) {
+        rows.push({ item: connector.nutName, qty: counts.fastenerQty, note: `${counts.connectorQty} 个连接件 × ${counts.fastenersPerBracket}` });
+      }
+      if (connector.boltName) {
+        rows.push({ item: connector.boltName, qty: counts.fastenerQty, note });
+      }
+      return rows;
+    }
+
+    function endpoints(b) {
+      if (b.axis === "X") return [[b.x, b.y, b.z], [b.x + b.length, b.y, b.z]];
+      if (b.axis === "Y") return [[b.x, b.y, b.z], [b.x, b.y + b.length, b.z]];
+      return [[b.x, b.y, b.z], [b.x, b.y, b.z + b.length]];
+    }
+
+    function render() {
+      renderTables();
+      renderCanvas();
+      renderModuleList();
+      const t = state.through === "X" ? "宽向横梁贯通，X 长度不扣料；Y/Z 方向端部扣 2 倍型材宽度。"
+        : state.through === "Y" ? "深向横梁贯通，Y 长度不扣料；X/Z 方向端部扣 2 倍型材宽度。"
+        : "立柱贯通，Z 高度不扣料；X/Y 方向端部扣 2 倍型材宽度。";
+      $("ruleText").textContent = `当前扣料规则：${t} 已添加模块 ${modules.length} 个。结构扩展、内部框架、门框类模块会参与下料和模型；面板与配件类进入采购清单。`;
+    }
+
+    function showStep(step) {
+      const isFrame = step === "frame";
+      $("framePanel").classList.toggle("panel-hidden", !isFrame);
+      $("modulesPanel").classList.toggle("panel-hidden", isFrame);
+      $("stepFrame").classList.toggle("active", isFrame);
+      $("stepModules").classList.toggle("active", !isFrame);
+      $("stepModules").classList.toggle("locked", isFrame);
+    }
+
+    const moduleCatalog = {
+      structure: [
+        ["top_extension", "顶部延伸/桥架"],
+        ["side_extension", "侧向扩展框"],
+        ["cantilever", "悬挑段"],
+        ["support_post", "附加落地支撑"]
+      ],
+      internal: [
+        ["shelf_frame", "独立层板支撑框"],
+        ["drawer_frame", "2020 抽屉框"],
+        ["divider_frame", "隔板/分仓框"],
+        ["equipment_tray", "设备托架"]
+      ],
+      motion: [
+        ["drawer_slide", "抽屉滑轨"],
+        ["door_frame", "门框/铰链门"],
+        ["sliding_door", "滑门轨道"],
+        ["lift_panel", "翻盖/升降件"]
+      ],
+      panel: [
+        ["top_panel", "台面/顶板"],
+        ["side_panel", "侧板"],
+        ["back_panel", "背板"],
+        ["pegboard", "洞洞板/挂板"]
+      ],
+      reinforce: [
+        ["diagonal_brace", "斜撑"],
+        ["gusset_plate", "三角板"],
+        ["extra_crossbar", "加密横梁"],
+        ["anti_rack", "抗晃连接"]
+      ],
+      base: [
+        ["leveling_foot", "脚杯"],
+        ["caster", "脚轮"],
+        ["floor_anchor", "地脚/地面固定"],
+        ["wall_anchor", "墙面固定"]
+      ]
+    };
+
+    function updateModuleTypes() {
+      const family = $("moduleFamily").value;
+      $("moduleType").innerHTML = moduleCatalog[family].map(([value, label]) => (
+        `<option value="${value}">${label}</option>`
+      )).join("");
+      updateModuleHelp();
+    }
+
+    function updateModuleHelp() {
+      const type = $("moduleType").value;
+      const helpers = {
+        top_extension: {
+          text: "顶部延伸/桥架：先选挂载位置，再填主尺寸。顶面左/右侧时，主尺寸就是延伸长度，次尺寸不填则沿用主框深度；顶面前/后侧时，主尺寸是加深距离，次尺寸不填则沿用主框宽度。",
+        },
+        side_extension: {
+          text: "侧向扩展框：选左侧或右侧，主尺寸是扩展宽度，次尺寸不填则沿用主框深度，高度沿用主框高度。",
+        },
+        cantilever: {
+          text: "悬挑段：和顶部延伸类似，但语义上表示没有落地支撑。选挂载位置，主尺寸是悬挑长度，后续建议加斜撑或三角板。",
+        },
+        support_post: {
+          text: "附加落地支撑：选支撑所在侧，主尺寸可理解为距离主框边缘的偏移，工具会生成一根支撑柱占位。",
+        },
+        shelf_frame: {
+          text: "独立层板支撑框：通常选主框内部。主尺寸是层框宽度，不填则用主框宽度；次尺寸是层框深度，不填则用主框深度；Z 可在高级里微调。",
+        },
+        drawer_frame: {
+          text: "2020 抽屉框：通常选主框内部。主尺寸是抽屉外宽，次尺寸是抽屉外深；后续专用规则会加入滑轨厚度和安装间隙。",
+        },
+        door_frame: {
+          text: "门框/铰链门：通常选前侧。主尺寸是门框宽度，不填则用主框宽度；次尺寸是门框高度，不填则用主框高度。",
+        },
+        drawer_slide: {
+          text: "抽屉滑轨：作为配件进入清单。主尺寸建议填滑轨长度，数量按一对滑轨估算。",
+        },
+        sliding_door: {
+          text: "滑门轨道：作为配件进入清单。主尺寸建议填轨道长度，次尺寸可填轨道数量或安装高度备注。",
+        },
+        lift_panel: {
+          text: "翻盖/升降件：作为配件进入清单。主尺寸可填面板宽度，次尺寸可填面板高度，备注里写铰链/气撑需求。",
+        },
+        top_panel: {
+          text: "台面/顶板：作为板材进入清单。主尺寸不填则用主框宽度，次尺寸不填则用主框深度，高级里的模块高可作为板厚。",
+        },
+        side_panel: {
+          text: "侧板：作为板材进入清单。主尺寸不填则用主框深度，次尺寸不填则用主框高度。",
+        },
+        back_panel: {
+          text: "背板：作为板材进入清单。主尺寸不填则用主框宽度，次尺寸不填则用主框高度。",
+        },
+        pegboard: {
+          text: "洞洞板/挂板：作为板材进入清单。主尺寸是板宽，次尺寸是板高。",
+        },
+        diagonal_brace: {
+          text: "斜撑：当前作为配件/待确认进入清单。主尺寸可填斜撑长度，备注里写安装面和方向。",
+        },
+        gusset_plate: {
+          text: "三角板：按 4 片估算进入配件清单。主尺寸可填边长或规格。",
+        },
+        extra_crossbar: {
+          text: "加密横梁：会生成一根横梁。挂前/后侧时沿宽度，挂左/右侧时沿深度；主尺寸不填则使用对应主框尺寸。",
+        },
+        anti_rack: {
+          text: "抗晃连接：作为配件/待确认进入清单，适合记录拉条、连接板或额外角码。",
+        },
+        leveling_foot: {
+          text: "脚杯：默认按 4 个估算进入配件清单。主尺寸可填脚杯高度。",
+        },
+        caster: {
+          text: "脚轮：默认按 4 个估算进入配件清单。主尺寸可填脚轮高度或轮径。",
+        },
+        floor_anchor: {
+          text: "地脚/地面固定：默认按 2 个估算进入配件清单。备注里写孔位、膨胀螺丝规格。",
+        },
+        wall_anchor: {
+          text: "墙面固定：默认按 2 个估算进入配件清单。备注里写墙面位置和连接板规格。",
+        }
+      };
+      const fallback = {
+        text: "先选挂载位置，再填主尺寸和次尺寸。高级坐标只是给需要微调时使用。",
+      };
+      const config = helpers[type] || fallback;
+      $("moduleHelp").textContent = config.text;
+      updateAnchorOptions(type);
+      updateModuleDimensionHints();
+      applyModuleDefaults(type);
+      updateRepeatHint();
+      applyAnchorGeometry();
+    }
+
+    function applyModuleDefaults(type) {
+      const p = num("profile");
+      const w = num("width");
+      const d = num("depth");
+      const h = num("height");
+      const defaults = {
+        top_extension: [600, 0],
+        side_extension: [600, 0],
+        cantilever: [400, 0],
+        support_post: [600, 0],
+        shelf_frame: [Math.max(p, w - 2 * p), Math.max(p, d - 2 * p)],
+        drawer_frame: [Math.max(p, w - 2 * p), Math.max(p, d - 2 * p)],
+        divider_frame: [Math.max(p, w - 2 * p), Math.max(p, d - 2 * p)],
+        equipment_tray: [Math.max(p, w - 2 * p), Math.max(p, d - 2 * p)],
+        drawer_slide: [Math.max(p, d - 2 * p), 0],
+        door_frame: [w, h],
+        sliding_door: [w, 0],
+        lift_panel: [w, h],
+        top_panel: [w, d],
+        side_panel: [d, h],
+        back_panel: [w, h],
+        pegboard: [w, h],
+        diagonal_brace: [0, 0],
+        gusset_plate: [0, 0],
+        extra_crossbar: [0, Math.round(h / 2)],
+        anti_rack: [0, 0],
+        leveling_foot: [0, 0],
+        caster: [0, 0],
+        floor_anchor: [0, 0],
+        wall_anchor: [0, 0]
+      }[type] || [0, 0];
+      $("modulePrimary").value = defaults[0];
+      $("moduleSecondary").value = defaults[1];
+      $("moduleQty").value = 1;
+      $("moduleClearance").value = 0;
+    }
+
+    function updateAnchorOptions(type) {
+      const groups = {
+        top_extension: [["top_right", "顶面右侧"], ["top_left", "顶面左侧"], ["top_front", "顶面前侧"], ["top_back", "顶面后侧"], ["custom", "自定义坐标"]],
+        cantilever: [["top_right", "顶面右侧"], ["top_left", "顶面左侧"], ["top_front", "顶面前侧"], ["top_back", "顶面后侧"], ["custom", "自定义坐标"]],
+        side_extension: [["top_right", "右侧"], ["top_left", "左侧"], ["front", "前侧"], ["back", "后侧"], ["custom", "自定义坐标"]],
+        support_post: [["top_right", "右前支撑点"], ["back", "右后支撑点"], ["top_left", "左前支撑点"], ["top_back", "左后支撑点"], ["custom", "自定义坐标"]],
+        shelf_frame: [["inside", "主框内部"], ["custom", "自定义坐标"]],
+        drawer_frame: [["inside", "主框内部"], ["custom", "自定义坐标"]],
+        divider_frame: [["inside", "主框内部"], ["custom", "自定义坐标"]],
+        equipment_tray: [["inside", "主框内部"], ["custom", "自定义坐标"]],
+        door_frame: [["front", "前侧"], ["back", "后侧"], ["custom", "自定义坐标"]],
+        extra_crossbar: [["front", "前侧横梁"], ["back", "后侧横梁"], ["top_left", "左侧深向梁"], ["top_right", "右侧深向梁"], ["custom", "自定义坐标"]],
+        top_panel: [["top_back", "顶面"], ["custom", "自定义坐标"]],
+        side_panel: [["top_left", "左侧"], ["top_right", "右侧"], ["custom", "自定义坐标"]],
+        back_panel: [["back", "背面"], ["front", "前面"], ["custom", "自定义坐标"]],
+        pegboard: [["back", "背面"], ["front", "前面"], ["custom", "自定义坐标"]]
+      };
+      const fallback = [["inside", "主框内部"], ["front", "前侧"], ["back", "后侧"], ["custom", "自定义坐标"]];
+      const options = groups[type] || fallback;
+      const previous = $("moduleAnchor").value;
+      $("moduleAnchor").innerHTML = options.map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
+      $("moduleAnchor").value = options.some(([value]) => value === previous) ? previous : options[0][0];
+    }
+
+    function updateModuleDimensionHints() {
+      const type = $("moduleType").value;
+      const hints = {
+        top_extension: ["延伸长度", "留空=沿用主框深度/宽度"],
+        side_extension: ["扩展宽度", "留空=沿用主框深度"],
+        cantilever: ["悬挑长度", "留空=沿用主框深度/宽度"],
+        support_post: ["离主框边缘距离", "不用填"],
+        shelf_frame: ["层框宽度", "层框深度"],
+        drawer_frame: ["抽屉外宽", "抽屉外深"],
+        drawer_slide: ["滑轨长度", "不用填"],
+        door_frame: ["门框宽度", "门框高度"],
+        sliding_door: ["轨道长度", "轨道数量/高度"],
+        lift_panel: ["面板宽度", "面板高度"],
+        top_panel: ["板宽", "板深"],
+        side_panel: ["板深", "板高"],
+        back_panel: ["板宽", "板高"],
+        pegboard: ["板宽", "板高"],
+        diagonal_brace: ["斜撑长度", "不用填"],
+        gusset_plate: ["三角板规格", "不用填"],
+        extra_crossbar: ["横梁长度", "安装高度"],
+        anti_rack: ["规格/长度", "不用填"],
+        leveling_foot: ["高度/规格", "不用填"],
+        caster: ["轮径/高度", "不用填"],
+        floor_anchor: ["规格", "不用填"],
+        wall_anchor: ["规格", "不用填"]
+      }[type] || ["主尺寸", "次尺寸"];
+      $("modulePrimaryHint").textContent = hints[0];
+      $("moduleSecondaryHint").textContent = hints[1];
+    }
+
+    function updateRepeatHint() {
+      const type = $("moduleType").value;
+      const isStackable = ["shelf_frame", "drawer_frame", "divider_frame", "equipment_tray"].includes(type);
+      $("moduleRepeatFields").classList.toggle("panel-hidden", !isStackable);
+      $("moduleQtyLabel").firstChild.textContent = isStackable ? "重复层数/个数" : "数量";
+      $("moduleRepeatHelp").textContent = isStackable
+        ? "重复数大于 1 时，会沿 Z 方向按“模块高 + 预留间隙”生成多份，适合多层抽屉或多层支撑框。"
+        : "结构扩展、顶部延伸、悬挑等通常保持 1；如果需要多个方向的延伸，请分别添加多个模块。";
+      if (!isStackable && num("moduleQty") > 1) {
+        $("moduleQty").value = 1;
+        $("moduleClearance").value = 0;
+      }
+    }
+
+    function setModuleGeometry(x, y, z, w, d, h) {
+      $("moduleX").value = Math.round(x);
+      $("moduleY").value = Math.round(y);
+      $("moduleZ").value = Math.round(z);
+      $("moduleW").value = Math.round(w);
+      $("moduleD").value = Math.round(d);
+      $("moduleH").value = Math.round(h);
+    }
+
+    function applyAnchorGeometry() {
+      const type = $("moduleType").value;
+      const anchor = $("moduleAnchor").value;
+      if (anchor === "custom") return;
+
+      const p = num("profile");
+      const w = num("width");
+      const d = num("depth");
+      const h = num("height");
+      const primary = Math.max(0, num("modulePrimary"));
+      const secondary = Math.max(0, num("moduleSecondary"));
+      let x = 0, y = 0, z = 0, mw = 0, md = 0, mh = 0;
+
+      if (["top_extension", "cantilever"].includes(type)) {
+        z = h - p;
+        mh = 0;
+        if (anchor === "top_right") {
+          x = w; y = 0; mw = primary || 600; md = secondary || d;
+        } else if (anchor === "top_left") {
+          mw = primary || 600; x = -mw; y = 0; md = secondary || d;
+        } else if (anchor === "top_front") {
+          x = 0; md = primary || 250; y = -md; mw = secondary || w;
+        } else if (anchor === "top_back") {
+          x = 0; y = d; md = primary || 250; mw = secondary || w;
+        }
+      } else if (type === "side_extension") {
+        z = 0; mh = h; md = secondary || d; mw = primary || 600;
+        if (["top_left", "front"].includes(anchor)) x = -mw;
+        else x = w;
+        y = anchor === "back" ? d : 0;
+      } else if (type === "support_post") {
+        mw = p; md = p; mh = h; z = 0;
+        const offset = primary || 600;
+        const isLeft = anchor === "top_left" || anchor === "top_back";
+        const isBack = anchor === "back" || anchor === "top_back";
+        x = isLeft ? -offset : w + offset - p;
+        y = isBack ? d - p : 0;
+      } else if (["shelf_frame", "drawer_frame", "divider_frame", "equipment_tray"].includes(type)) {
+        x = anchor === "inside" ? p : 0;
+        y = anchor === "inside" ? p : 0;
+        z = p;
+        mw = primary || Math.max(p, w - 2 * p);
+        md = secondary || Math.max(p, d - 2 * p);
+        mh = type === "drawer_frame" ? p : 0;
+      } else if (type === "door_frame") {
+        x = 0;
+        y = anchor === "back" ? d - p : 0;
+        z = 0;
+        mw = primary || w;
+        md = p;
+        mh = secondary || h;
+      } else if (type === "extra_crossbar") {
+        z = secondary || Math.round(h / 2);
+        mh = 0;
+        if (anchor === "front") {
+          x = p; y = 0; mw = primary || Math.max(1, w - 2 * p); md = p;
+        } else if (anchor === "back") {
+          x = p; y = d - p; mw = primary || Math.max(1, w - 2 * p); md = p;
+        } else if (anchor === "top_left") {
+          x = 0; y = p; mw = p; md = primary || Math.max(1, d - 2 * p);
+        } else {
+          x = w - p; y = p; mw = p; md = primary || Math.max(1, d - 2 * p);
+        }
+      } else if (moduleCreatesPanel({ family: $("moduleFamily").value, type })) {
+        const panel = panelGeometry(type, anchor, primary, secondary, w, d, h);
+        x = panel.x; y = panel.y; z = panel.z; mw = panel.w; md = panel.d; mh = panel.h;
+      } else {
+        x = 0; y = 0; z = 0;
+        mw = primary; md = secondary; mh = 0;
+      }
+
+      setModuleGeometry(x, y, z, mw, md, mh);
+    }
+
+    function panelGeometry(type, anchor, primary, secondary, w, d, h) {
+      if (type === "side_panel") {
+        return { x: anchor === "top_left" ? 0 : w, y: 0, z: 0, w: primary || d, d: 18, h: secondary || h };
+      }
+      if (type === "back_panel") {
+        return { x: 0, y: anchor === "front" ? 0 : d, z: 0, w: primary || w, d: 18, h: secondary || h };
+      }
+      if (type === "pegboard") {
+        return { x: 0, y: anchor === "front" ? 0 : d, z: 0, w: primary || w, d: 18, h: secondary || h };
+      }
+      return { x: 0, y: 0, z: h, w: primary || w, d: secondary || d, h: 18 };
+    }
+
+    function moduleLabel(family, type) {
+      const familySelect = $("moduleFamily");
+      const familyLabel = [...familySelect.options].find((o) => o.value === family)?.textContent || family;
+      const typeLabel = (moduleCatalog[family] || []).find(([value]) => value === type)?.[1] || type;
+      return { familyLabel, typeLabel };
+    }
+
+    function readModuleForm() {
+      applyAnchorGeometry();
+      const family = $("moduleFamily").value;
+      const type = $("moduleType").value;
+      const labels = moduleLabel(family, type);
+      return {
+        id: nextModuleId++,
+        family,
+        familyLabel: labels.familyLabel,
+        type,
+        typeLabel: labels.typeLabel,
+        anchor: $("moduleAnchor").value,
+        x: num("moduleX"),
+        y: num("moduleY"),
+        z: num("moduleZ"),
+        width: num("moduleW"),
+        depth: num("moduleD"),
+        height: num("moduleH"),
+        qty: Math.max(1, num("moduleQty")),
+        clearance: num("moduleClearance"),
+        note: $("moduleNote").value.trim(),
+      };
+    }
+
+    function addModule() {
+      modules.push(readModuleForm());
+      compute();
+    }
+
+    function removeModule(id) {
+      modules = modules.filter((m) => m.id !== id);
+      compute();
+    }
+
+    function renderModuleList() {
+      const list = $("moduleList");
+      if (!list) return;
+      $("moduleEmpty").style.display = modules.length ? "none" : "block";
+      list.innerHTML = modules.map((m) => `
+        <div class="module-item">
+          <div class="module-item-head">
+            <div class="module-title">${escapeHtml(m.familyLabel)} / ${escapeHtml(m.typeLabel)} × ${escapeHtml(m.qty)}</div>
+            <button class="icon" data-remove-module="${m.id}" type="button">删除</button>
+          </div>
+          <div class="module-meta">
+            位置 ${m.x}, ${m.y}, ${m.z}；尺寸 ${m.width} × ${m.depth} × ${m.height}；间隙 ${m.clearance}
+          </div>
+          <div class="module-meta">${escapeHtml(m.note || "无备注")}</div>
+        </div>
+      `).join("");
+      for (const btn of list.querySelectorAll("[data-remove-module]")) {
+        btn.addEventListener("click", () => removeModule(Number(btn.dataset.removeModule)));
+      }
+    }
+
+    function renderTables() {
+      $("cutTable").querySelector("tbody").innerHTML = state.groups.map((g) => `
+        <tr>
+          <td>${escapeHtml(g.spec)}</td>
+          <td class="num">${g.length}</td>
+          <td class="num">${g.qty}</td>
+          <td>${escapeHtml([...g.notes].join("；"))}</td>
+        </tr>
+      `).join("");
+      const hardwareRows = [
+        ...state.hardware,
+        ...state.panels.map((p) => ({
+          item: p.item,
+          qty: p.qty,
+          note: `板材/面板 ${p.width}x${p.depth}x${p.height}；${p.note}`
+        })),
+        ...state.accessories
+      ];
+      $("hardwareTable").querySelector("tbody").innerHTML = hardwareRows.map((h) => `
+        <tr>
+          <td>${escapeHtml(h.item)}</td>
+          <td class="num">${h.qty}</td>
+          <td>${escapeHtml(h.note)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderCanvas() {
+      const canvas = $("preview");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const bounds = sceneBounds();
+      const w = bounds.width, d = bounds.depth, h = bounds.height;
+      const scale = Math.min(760 / Math.max(w + d * 0.72, 1), 500 / Math.max(h + d * 0.42, 1));
+      const ox = canvas.width * 0.5;
+      const oy = canvas.height * 0.82;
+      const project = (x, y, z) => {
+        return [
+          ox + (x - bounds.centerX) * scale + (y - bounds.centerY) * scale * 0.72,
+          oy - (z - bounds.minZ) * scale + (y - bounds.centerY) * scale * 0.42
+        ];
+      };
+
+      const faces = [];
+      for (const box of boxes()) {
+        const v = boxVerts(box);
+        const faceDefs = [
+          { ids: [0, 1, 2, 3], shade: "#7c8a92" },
+          { ids: [4, 7, 6, 5], shade: "#c6d0d6" },
+          { ids: [0, 4, 5, 1], shade: "#aeb9c0" },
+          { ids: [1, 5, 6, 2], shade: "#95a3ab" },
+          { ids: [2, 6, 7, 3], shade: "#87959d" },
+          { ids: [3, 7, 4, 0], shade: "#b9c3c9" },
+        ];
+        for (const f of faceDefs) {
+          const pts3 = f.ids.map((i) => v[i]);
+          const depthKey = pts3.reduce((sum, p3) => sum + p3[0] + p3[1] + p3[2] * 0.2, 0) / pts3.length;
+          faces.push({ points: pts3.map((p3) => project(...p3)), shade: f.shade, depthKey });
+        }
+      }
+      faces.sort((a, b) => a.depthKey - b.depthKey);
+      ctx.lineJoin = "round";
+      for (const face of faces) {
+        ctx.beginPath();
+        ctx.moveTo(face.points[0][0], face.points[0][1]);
+        for (let i = 1; i < face.points.length; i++) ctx.lineTo(face.points[i][0], face.points[i][1]);
+        ctx.closePath();
+        ctx.fillStyle = face.shade;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(37, 48, 56, 0.7)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(face.points[0][0], face.points[0][1]);
+        for (let i = 1; i < face.points.length; i++) ctx.lineTo(face.points[i][0], face.points[i][1]);
+        ctx.closePath();
+        ctx.stroke();
+      }
+      ctx.fillStyle = "#1d252c";
+      ctx.font = "16px Microsoft YaHei, Segoe UI, Arial";
+      ctx.fillText(`${state.name}  ${state.width} × ${state.depth} × ${state.height} mm`, 24, 34);
+      ctx.font = "13px Microsoft YaHei, Segoe UI, Arial";
+      ctx.fillStyle = "#66717d";
+      ctx.fillText(`型材 ${state.profile}${state.profile}，共 ${state.beams.length} 根，模块 ${modules.length} 个`, 24, 56);
+    }
+
+    function sceneBounds() {
+      const allBoxes = boxes();
+      if (!allBoxes.length) {
+        return { minX: 0, minY: 0, minZ: 0, maxX: state.width, maxY: state.depth, maxZ: state.height, width: state.width, depth: state.depth, height: state.height, centerX: state.width / 2, centerY: state.depth / 2 };
+      }
+      const minX = Math.min(...allBoxes.map((b) => b.x));
+      const minY = Math.min(...allBoxes.map((b) => b.y));
+      const minZ = Math.min(...allBoxes.map((b) => b.z));
+      const maxX = Math.max(...allBoxes.map((b) => b.x + b.sx));
+      const maxY = Math.max(...allBoxes.map((b) => b.y + b.sy));
+      const maxZ = Math.max(...allBoxes.map((b) => b.z + b.sz));
+      return {
+        minX, minY, minZ, maxX, maxY, maxZ,
+        width: Math.max(1, maxX - minX),
+        depth: Math.max(1, maxY - minY),
+        height: Math.max(1, maxZ - minZ),
+        centerX: (minX + maxX) / 2,
+        centerY: (minY + maxY) / 2,
+      };
+    }
+
+    function boxes() {
+      return state.beams.map((b) => {
+        const p = b.p;
+        let sx = p, sy = p, sz = p;
+        if (b.axis === "X") sx = b.length;
+        if (b.axis === "Y") sy = b.length;
+        if (b.axis === "Z") sz = b.length;
+        return { name: b.name, x: b.x, y: b.y, z: b.z, sx, sy, sz };
+      });
+    }
+
+    function exportObj() {
+      let out = `# ${state.name}\n# unit: millimeter\n`;
+      let index = 1;
+      for (const box of boxes()) {
+        out += `o ${safeName(box.name)}\n`;
+        const verts = boxVerts(box);
+        for (const v of verts) out += `v ${v[0]} ${v[1]} ${v[2]}\n`;
+        const faces = [
+          [1,2,3,4], [5,8,7,6], [1,5,6,2],
+          [2,6,7,3], [3,7,8,4], [4,8,5,1]
+        ];
+        for (const f of faces) out += `f ${f.map((n) => n + index - 1).join(" ")}\n`;
+        index += 8;
+      }
+      download(`${state.name}.obj`, out, "text/plain;charset=utf-8");
+    }
+
+    function exportStl() {
+      let out = `solid ${safeName(state.name)}\n`;
+      for (const box of boxes()) {
+        const v = boxVerts(box);
+        const tris = [
+          [0,1,2],[0,2,3], [4,7,6],[4,6,5], [0,4,5],[0,5,1],
+          [1,5,6],[1,6,2], [2,6,7],[2,7,3], [3,7,4],[3,4,0]
+        ];
+        for (const tri of tris) {
+          out += "  facet normal 0 0 0\n    outer loop\n";
+          for (const i of tri) out += `      vertex ${v[i][0]} ${v[i][1]} ${v[i][2]}\n`;
+          out += "    endloop\n  endfacet\n";
+        }
+      }
+      out += `endsolid ${safeName(state.name)}\n`;
+      download(`${state.name}.stl`, out, "model/stl;charset=utf-8");
+    }
+
+    function boxVerts(b) {
+      const x = b.x, y = b.y, z = b.z;
+      const X = x + b.sx, Y = y + b.sy, Z = z + b.sz;
+      return [[x,y,z],[X,y,z],[X,Y,z],[x,Y,z],[x,y,Z],[X,y,Z],[X,Y,Z],[x,Y,Z]];
+    }
+
+    function exportCsv() {
+      const rows = [["类别","项目","规格","长度mm","数量","备注"]];
+      for (const g of state.groups) rows.push(["型材", `${g.spec} 铝型材`, g.spec, g.length, g.qty, [...g.notes].join("；")]);
+      for (const h of state.hardware) rows.push(["五金", h.item, "", "", h.qty, h.note]);
+      for (const p of state.panels) rows.push(["板材/面板", p.item, "", `${p.width}x${p.depth}x${p.height}`, p.qty, p.note]);
+      for (const a of state.accessories) rows.push(["配件/待确认", a.item, "", "", a.qty, a.note]);
+      for (const m of modules) rows.push(["模块", `${m.familyLabel}/${m.typeLabel}`, "", "", m.qty, `位置 ${m.x},${m.y},${m.z}；尺寸 ${m.width}x${m.depth}x${m.height}；间隙 ${m.clearance}；${m.note}`]);
+      const csv = rows.map((r) => r.map(csvCell).join(",")).join("\r\n");
+      download(`${state.name}-BOM.csv`, "\ufeff" + csv, "text/csv;charset=utf-8");
+    }
+
+    function exportJson() {
+      download(`${state.name}.json`, JSON.stringify(state, null, 2), "application/json;charset=utf-8");
+    }
+
+    async function importJsonFile(file) {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      $("frameName").value = data.name || "frame";
+      $("width").value = data.width || 800;
+      $("depth").value = data.depth || 250;
+      $("height").value = data.height || 1670;
+      $("profile").value = data.profile || 20;
+      $("through").value = data.through || "Z";
+      $("levels").value = (data.levels || []).join(",");
+      $("xDivs").value = (data.xDivs || []).join(",");
+      $("yDivs").value = (data.yDivs || []).join(",");
+      modules = Array.isArray(data.modules) ? data.modules : [];
+      nextModuleId = modules.reduce((max, m) => Math.max(max, Number(m.id) || 0), 0) + 1;
+      compute();
+      showStep(modules.length ? "modules" : "frame");
+    }
+
+    function csvCell(v) {
+      const s = String(v ?? "");
+      return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    }
+
+    function download(filename, text, type) {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[ch]));
+    }
+
+    function safeName(text) {
+      return String(text).trim().replace(/[^\w\u4e00-\u9fa5.-]+/g, "_") || "frame";
+    }
+
+    $("recalc").addEventListener("click", () => {
+      try { compute(); } catch (err) { alert(err.message); }
+    });
+    $("confirmFrame").addEventListener("click", () => {
+      try {
+        compute();
+        showStep("modules");
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+    $("backToFrame").addEventListener("click", () => showStep("frame"));
+    $("stepFrame").addEventListener("click", () => showStep("frame"));
+    $("stepModules").addEventListener("click", () => showStep("modules"));
+    $("moduleFamily").addEventListener("change", updateModuleTypes);
+    $("moduleType").addEventListener("change", updateModuleHelp);
+    $("moduleQty").addEventListener("change", updateRepeatHint);
+    for (const id of ["moduleAnchor", "modulePrimary", "moduleSecondary", "moduleClearance"]) {
+      $(id).addEventListener("change", applyAnchorGeometry);
+    }
+    $("addModule").addEventListener("click", addModule);
+    $("exportCsv").addEventListener("click", exportCsv);
+    $("exportJson").addEventListener("click", exportJson);
+    $("importJson").addEventListener("click", () => $("jsonFile").click());
+    $("jsonFile").addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        await importJsonFile(file);
+      } catch (err) {
+        alert(`导入失败：${err.message}`);
+      } finally {
+        event.target.value = "";
+      }
+    });
+    $("exportObj").addEventListener("click", exportObj);
+    $("exportStl").addEventListener("click", exportStl);
+    $("sampleBase").addEventListener("click", () => {
+      $("frameName").value = "矮柜框架";
+      $("width").value = 2000;
+      $("depth").value = 280;
+      $("height").value = 730;
+      $("profile").value = 20;
+      $("through").value = "Z";
+      $("levels").value = "";
+      $("xDivs").value = "500,1000,1500";
+      $("yDivs").value = "";
+      compute();
+    });
+    $("sampleTower").addEventListener("click", () => {
+      $("frameName").value = "右侧高架";
+      $("width").value = 800;
+      $("depth").value = 250;
+      $("height").value = 1670;
+      $("profile").value = 20;
+      $("through").value = "Z";
+      $("levels").value = "730,1200";
+      $("xDivs").value = "";
+      $("yDivs").value = "";
+      compute();
+    });
+    for (const id of ["frameName", "width", "depth", "height", "profile", "through", "levels", "xDivs", "yDivs", "connectorType", "cornerConnectors", "edgeConnectors", "levelConnectors", "extraConnectors", "fastenersPerBracket", "orderNote"]) {
+      $(id).addEventListener("change", () => {
+        try { compute(); } catch (err) { /* wait for valid input */ }
+      });
+    }
+    updateModuleTypes();
+    compute();
+  </script>
+</body>
+</html>
