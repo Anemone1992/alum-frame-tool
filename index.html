@@ -494,6 +494,17 @@
 
       <div class="note" id="ruleText"></div>
 
+      <div id="exportPanel" class="panel-hidden" style="margin-top:14px;">
+        <h2 style="font-size:16px;margin:0 0 8px;">导出内容</h2>
+        <div class="toolbar">
+          <input id="exportFilename" readonly style="max-width:360px;">
+          <button id="copyExport">复制内容</button>
+          <button id="downloadExport">下载生成文件</button>
+        </div>
+        <textarea id="exportText" readonly style="width:100%;min-height:180px;font-family:Consolas, monospace;"></textarea>
+        <div class="small">内置浏览器可能不支持直接下载；可以复制内容，或在普通浏览器/GitHub Pages 页面中下载。</div>
+      </div>
+
       <div class="tables">
         <div>
           <h2 style="font-size:16px;margin:16px 0 8px;">型材切割清单</h2>
@@ -1483,7 +1494,7 @@
         for (const f of faces) out += `f ${f.map((n) => n + index - 1).join(" ")}\n`;
         index += 8;
       }
-      download(`${state.name}.obj`, out, "text/plain;charset=utf-8");
+      showExport(`${state.name}.obj`, out, "text/plain;charset=utf-8");
     }
 
     function exportStl() {
@@ -1501,7 +1512,7 @@
         }
       }
       out += `endsolid ${safeName(state.name)}\n`;
-      download(`${state.name}.stl`, out, "model/stl;charset=utf-8");
+      showExport(`${state.name}.stl`, out, "model/stl;charset=utf-8");
     }
 
     function boxVerts(b) {
@@ -1518,11 +1529,38 @@
       for (const a of state.accessories) rows.push(["配件/待确认", a.item, "", "", a.qty, a.note]);
       for (const m of modules) rows.push(["模块", `${m.familyLabel}/${m.typeLabel}`, "", "", m.qty, `位置 ${m.x},${m.y},${m.z}；尺寸 ${m.width}x${m.depth}x${m.height}；间隙 ${m.clearance}；${m.note}`]);
       const csv = rows.map((r) => r.map(csvCell).join(",")).join("\r\n");
-      download(`${state.name}-BOM.csv`, "\ufeff" + csv, "text/csv;charset=utf-8");
+      showExport(`${state.name}-BOM.csv`, "\ufeff" + csv, "text/csv;charset=utf-8");
     }
 
     function exportJson() {
-      download(`${state.name}.json`, JSON.stringify(state, null, 2), "application/json;charset=utf-8");
+      showExport(`${state.name}.json`, JSON.stringify(state, null, 2), "application/json;charset=utf-8");
+    }
+
+    function showExport(filename, text, type) {
+      $("exportFilename").value = filename;
+      $("exportText").value = text;
+      $("exportText").dataset.mime = type;
+      $("exportPanel").classList.remove("panel-hidden");
+      $("exportPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function downloadCurrentExport() {
+      const filename = $("exportFilename").value || "export.txt";
+      const text = $("exportText").value || "";
+      const type = $("exportText").dataset.mime || "text/plain;charset=utf-8";
+      download(filename, text, type);
+    }
+
+    async function copyCurrentExport() {
+      const text = $("exportText").value || "";
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (err) {
+        $("exportText").focus();
+        $("exportText").select();
+        document.execCommand("copy");
+      }
     }
 
     async function importJsonFile(file) {
@@ -1594,6 +1632,8 @@
     $("addModule").addEventListener("click", addModule);
     $("exportCsv").addEventListener("click", exportCsv);
     $("exportJson").addEventListener("click", exportJson);
+    $("copyExport").addEventListener("click", copyCurrentExport);
+    $("downloadExport").addEventListener("click", downloadCurrentExport);
     $("importJson").addEventListener("click", () => $("jsonFile").click());
     $("jsonFile").addEventListener("change", async (event) => {
       const file = event.target.files[0];
